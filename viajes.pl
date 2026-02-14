@@ -43,6 +43,13 @@ actividad(mendoza, cata_vinos, otono).
 actividad(mar_del_plata, playa, verano).
 actividad(iguazu, cataratas, invierno).
 
+% presupuesto_compatible(NivelElegido, NivelDestino)
+presupuesto_compatible(bajo, bajo).
+presupuesto_compatible(medio, bajo).
+presupuesto_compatible(medio, medio).
+presupuesto_compatible(alto, medio).
+presupuesto_compatible(alto, alto).
+
 % Recomendación general basada en 4 pilares
 recomendar_destino(Destino, Temp, Pres, Comp, Act) :-
     temporada_ideal(Destino, Temp),
@@ -50,9 +57,12 @@ recomendar_destino(Destino, Temp, Pres, Comp, Act) :-
     adecuada_para(Destino, Comp),
     actividad(Destino, Act, Temp).
 
-% Regla para obtener solo actividades según destino y clima
-que_hacer_en(Destino, Temp, Actividad) :-
-    actividad(Destino, Actividad, Temp).
+recomendar_destino(Destino, Temp, PresElegido, Comp, Act) :-
+    temporada_ideal(Destino, Temp),
+    presupuesto(Destino, PresDestino),           % Buscamos el presupuesto real del destino
+    presupuesto_compatible(PresElegido, PresDestino), % Verificamos si entra en el rango
+    adecuada_para(Destino, Comp),
+    actividad(Destino, Act, Temp).
 
 % ... (tus hechos de locacion, temporada_ideal, etc.).
 
