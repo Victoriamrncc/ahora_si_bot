@@ -14,29 +14,40 @@ def obtener_lista(predicado):
     except:
         return []
 
-# --- INTERFAZ ---
-sg.theme('DarkTeal9')
+sg.theme('GreenMono')
 
 layout = [
-    [sg.Text('Sistema Experto: Viajes Argentina', font=("Helvetica", 20), text_color='white')],
+    [sg.Text('Sistema Experto: Viajes Argentina', font=("Helvetica", 20))],
     [sg.HorizontalSeparator()],
     
-    # Selectores basados en tus hechos
-    [sg.Text('Temporada:', size=(12, 1)), sg.Combo(obtener_lista('lista_temporadas'), key='-TEMP-', readonly=True, expand_x=True)],
-    [sg.Text('Presupuesto:', size=(12, 1)), sg.Combo(obtener_lista('lista_presupuestos'), key='-PRES-', readonly=True, expand_x=True)],
-    [sg.Text('Compañía:', size=(12, 1)), sg.Combo(obtener_lista('lista_companias'), key='-COMP-', readonly=True, expand_x=True)],
+    # Selectores
+    [sg.Text('Temporada:', size=(12, 1)),
+     sg.Combo(obtener_lista('lista_temporadas'),
+              key='-TEMP-', readonly=True, expand_x=True)],
+
+    [sg.Text('Presupuesto:', size=(12, 1)),
+     sg.Combo(obtener_lista('lista_presupuestos'),
+              key='-PRES-', readonly=True, expand_x=True)],
+
+    [sg.Text('Compañía:', size=(12, 1)),
+     sg.Combo(obtener_lista('lista_companias'),
+              key='-COMP-', readonly=True, expand_x=True)],
     
-    [sg.Button('Consultar Destino', size=(20, 1), button_color=('white', '#004d4d')), sg.Button('Salir')],
+    [sg.Button('Consultar Destino', size=(20, 1)),
+     sg.Button('Salir')],
     
     [sg.HorizontalSeparator()],
     [sg.Text('Resultado de la Inferencia:', font=("Helvetica", 12, 'bold'))],
     
-    # Área de visualización
-    [sg.Multiline(size=(50, 8), key='-OUTPUT-', background_color='#002b36', text_color='#839496', font=("Consolas", 11))],
+    # Área resultado → sin colores hardcodeados
+    [sg.Multiline(size=(50, 8),
+                  key='-OUTPUT-',
+                  font=("Consolas", 11))],
     
-    # Espacio para imagen (No rompe si no hay archivo)
-    [sg.Image(key='-IMAGE-', size=(300, 200), background_color='#003d4d')]
+    # Imagen → sin background manual
+    [sg.Image(key='-IMAGE-', size=(300, 200))]
 ]
+
 
 window = sg.Window('Argentina Travel Expert System', layout, finalize=True)
 
