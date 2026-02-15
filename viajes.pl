@@ -18,7 +18,7 @@ perfil(bariloche, exploracion).
 perfil(el_calafate, aventura).
 perfil(ushuaia, descanso).
 perfil(mar_del_plata, descanso).
-perfil(mendoza, exploracion).
+perfil(mendoza, exploracion).|
 perfil(iguazu, aventura).
 perfil(salta_capital, exploracion).
 
@@ -58,6 +58,14 @@ actividad(mendoza, cata_vinos, otono).
 actividad(mar_del_plata, playa, verano).
 actividad(iguazu, cataratas, invierno).
 
+% presupuesto_compatible(NivelUsuario, NivelDestino)
+presupuesto_compatible(bajo, bajo).
+presupuesto_compatible(medio, medio).
+presupuesto_compatible(medio, bajo).
+presupuesto_compatible(alto, alto).
+presupuesto_compatible(alto, medio).
+
+
 % =================================================================
 % MÁQUINA DE INFERENCIA (Lógica de Perfiles)
 % =================================================================
@@ -75,10 +83,11 @@ recomendar_destino(Destino, Temp, Pres, Comp, Act) :-
     buscar_coincidencias(Destino, Temp, Pres, Comp, _, Act).
 
 % buscar_coincidencias(Destino, Temp, Pres, Comp, Perfil, Act)
-buscar_coincidencias(Destino, Temp, Pres, Comp, Perfil, Act) :-
+buscar_coincidencias(Destino, Temp, PresUser, Comp, Perfil, Act) :-
     perfil(Destino, Perfil),
     temporada_ideal(Destino, Temp),
-    presupuesto(Destino, Pres),
+    presupuesto(Destino, PresDestino),
+    presupuesto_compatible(PresUser, PresDestino),
     adecuada_para(Destino, Comp),
     actividad(Destino, Act, Temp).
 % =================================================================

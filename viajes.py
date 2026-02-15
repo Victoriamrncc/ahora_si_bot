@@ -18,14 +18,25 @@ def calcular_categoria_presupuesto(monto, dias, personas):
     """Calcula la categoría basada en el gasto diario por persona"""
     try:
         gasto_diario_pp = monto / (dias * personas)
+
         if gasto_diario_pp < 50000:
-            return 'bajo'
-        elif 50000 <= gasto_diario_pp <= 100000:
-            return 'medio'
+            categoria = 'bajo'
+            explicacion = f"Como el gasto diario por persona (${gasto_diario_pp:,.0f}) es menor a $50.000."
+        
+        elif gasto_diario_pp <= 100000:
+            categoria = 'medio'
+            explicacion = f"Como el gasto diario por persona (${gasto_diario_pp:,.0f}) está entre $50.000 y $100.000."
+        
         else:
-            return 'alto'
+            categoria = 'alto'
+            explicacion = f"Como el gasto diario por persona (${gasto_diario_pp:,.0f}) es mayor a $100.000."
+
+        return categoria, gasto_diario_pp, explicacion
+
     except ZeroDivisionError:
-        return 'bajo'
+        return 'bajo', 0, "No se pudo calcular correctamente el presupuesto."
+
+
 
 sg.theme('GreenMono')
 
@@ -77,9 +88,14 @@ while True:
     if event == 'Calcular Nivel':
         try:
             m, d, p = float(values['-MONTO-']), int(values['-DIAS-']), int(values['-PERSONAS-'])
-            cat = calcular_categoria_presupuesto(m, d, p)
+            cat, gasto, explicacion = calcular_categoria_presupuesto(m, d, p)
             window['-PRES-'].update(value=cat)
-            sg.popup(f"Presupuesto detectado: {cat.upper()}")
+
+            sg.popup(
+                f"Tu gasto diario por persona es: ${gasto:,.0f}\n\n"
+                f"{explicacion}\n\n"
+                f"Nivel detectado: {cat.upper()}"
+            )
         except ValueError:
             sg.popup_error("Ingresa números válidos en la calculadora.")
 
