@@ -109,17 +109,22 @@ while True:
             continue
 
         perfiles = list(prolog.query(f"determinar_perfil(Perfil, {v_aven}, {v_expl}, {v_desc})"))
+        
         if perfiles:
-            window['-OUTPUT-'].update("")
+            window['-OUTPUT-'].update("SISTEMA EXPERTO: RAZONAMIENTO LOGICO\n" + "="*40 + "\n") # NUEVO: Encabezado
             vistos = set()
             for per in perfiles:
-                q = f"buscar_coincidencias(D, {t}, {p}, {c}, {per['Perfil']}, A), locacion(D, Prov, Reg)"
+                # NUEVO: Llamamos a 'buscar_coincidencias_detallada' que creamos en el .pl
+                q = f"buscar_coincidencias_detallada(D, {t}, {p}, {c}, {per['Perfil']}, Act, Expl)"
+                
                 for res in list(prolog.query(q)):
                     if res['D'] not in vistos:
-                        window['-OUTPUT-'].update(f"DESTINO: {str(res['D']).capitalize()}\n", append=True)
+                        # NUEVO: En lugar de imprimir solo el destino, imprimimos la explicación 'Expl'
+                        explicacion = res['Expl'].decode('utf-8') if isinstance(res['Expl'], bytes) else res['Expl']
+                        window['-OUTPUT-'].update(f"• {explicacion}\n\n", append=True)
                         vistos.add(res['D'])
         else:
-            window['-OUTPUT-'].update("No se pudo determinar un perfil.")
+            window['-OUTPUT-'].update("No se pudo determinar un perfil de usuario.")
 
     if event == 'Calcular Ruta Óptima':
         seleccionados = [d for d in destinos_db if values.get(f'-CB_{d}-')]

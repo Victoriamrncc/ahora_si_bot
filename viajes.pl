@@ -82,14 +82,23 @@ determinar_perfil(exploracion, no, no, no).
 recomendar_destino(Destino, Temp, Pres, Comp, Act) :-
     buscar_coincidencias(Destino, Temp, Pres, Comp, _, Act).
 
-% buscar_coincidencias(Destino, Temp, Pres, Comp, Perfil, Act)
-buscar_coincidencias(Destino, Temp, PresUser, Comp, Perfil, Act) :-
+% Justificación de la recomendación (Explicabilidad Amigable)
+explicar(Destino, Temp, _PresUser, _Comp, Perfil, Act, Mensaje) :-
+    locacion(Destino, Prov, _Reg),
+    atomic_list_concat([
+        'Analicé tu perfil y ', Destino, ' (', Prov, ') es la opción ideal para vos porque encaja con tu estilo de ', Perfil, 
+        '. Si vas en ', Temp, ', vas a poder disfrutar de actividades como ', Act, '.'
+    ], Mensaje).
+
+% Motor de inferencia
+buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion) :-
     perfil(Destino, Perfil),
     temporada_ideal(Destino, Temp),
     presupuesto(Destino, PresDestino),
-    presupuesto_compatible(PresUser, PresDestino),
+    presupuesto_compatible(PresUser, PresDestino), % La lógica del dinero sigue funcionando internamente
     adecuada_para(Destino, Comp),
-    actividad(Destino, Act, Temp).
+    actividad(Destino, Act, Temp),
+    explicar(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion).
 % =================================================================
 % 3. PREDICADOS PARA LA INTERFAZ [cite: 46]
 % =================================================================
