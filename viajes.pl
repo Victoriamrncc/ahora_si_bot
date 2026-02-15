@@ -28,8 +28,6 @@ temporada_ideal(bariloche, verano).
 temporada_ideal(el_calafate, verano).
 temporada_ideal(ushuaia, invierno).
 temporada_ideal(mar_del_plata, verano).
-temporada_ideal(mendoza, otono).
-temporada_ideal(mendoza, primavera).
 temporada_ideal(iguazu, invierno).
 
 % presupuesto(Locacion, Nivel)
@@ -41,9 +39,9 @@ presupuesto(mendoza, medio).
 presupuesto(salta_capital, bajo).
 
 % adecuada_para(Locacion, Compania)
-adecuada_para(bariloche, amigos).
 adecuada_para(bariloche, familia).
 adecuada_para(el_calafate, pareja).
+adecuada_para(el_calafate, amigos).
 adecuada_para(ushuaia, pareja).
 adecuada_para(mar_del_plata, amigos).
 adecuada_para(mendoza, pareja).
@@ -79,25 +77,26 @@ determinar_perfil(exploracion, no, no, no).
 
 % recomendar_destino(Destino, Temp, Pres, Comp, Act) 
 % Se define el objetivo para que Python lo consulte directamente.
-recomendar_destino(Destino, Temp, Pres, Comp, Act) :-
-    buscar_coincidencias(Destino, Temp, Pres, Comp, _, Act).
+% Redefinimos para que use la lógica detallada
+recomendar_destino(Destino, Temp, PresUser, Comp, Act, Explicacion) :-
+    buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, _, Act, Explicacion).
 
 % Justificación de la recomendación (Explicabilidad Amigable)
 explicar(Destino, Temp, _PresUser, _Comp, Perfil, Act, Mensaje) :-
     locacion(Destino, Prov, _Reg),
     atomic_list_concat([
-        'Analicé tu perfil y ', Destino, ' (', Prov, ') es la opción ideal para vos porque encaja con tu estilo de ', Perfil, 
+        'Analice tu perfil y ', Destino, ' (', Prov, ') es la opciogn ideal para vos porque encaja con tu estilo de ', Perfil, 
         '. Si vas en ', Temp, ', vas a poder disfrutar de actividades como ', Act, '.'
     ], Mensaje).
 
 % Motor de inferencia
 buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion) :-
     perfil(Destino, Perfil),
-    temporada_ideal(Destino, Temp),
+    (temporada_ideal(Destino, Temp) ; true), % Si no hay temporada, sigue adelante
     presupuesto(Destino, PresDestino),
-    presupuesto_compatible(PresUser, PresDestino), % La lógica del dinero sigue funcionando internamente
-    adecuada_para(Destino, Comp),
-    actividad(Destino, Act, Temp),
+    presupuesto_compatible(PresUser, PresDestino),
+    (adecuada_para(Destino, Comp) ; true),    % Si no coincide la compañía, no bloquea
+    (actividad(Destino, Act, Temp) ; Act = 'explorar la ciudad'), 
     explicar(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion).
 % =================================================================
 % 3. PREDICADOS PARA LA INTERFAZ [cite: 46]
