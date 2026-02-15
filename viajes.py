@@ -18,29 +18,19 @@ def calcular_categoria_presupuesto(monto, dias, personas):
     """Calcula la categoría basada en el gasto diario por persona"""
     try:
         gasto_diario_pp = monto / (dias * personas)
-
         if gasto_diario_pp < 50000:
-            categoria = 'bajo'
-            explicacion = f"Como el gasto diario por persona (${gasto_diario_pp:,.0f}) es menor a $50.000."
-        
-        elif gasto_diario_pp <= 100000:
-            categoria = 'medio'
-            explicacion = f"Como el gasto diario por persona (${gasto_diario_pp:,.0f}) está entre $50.000 y $100.000."
-        
+            return 'bajo'
+        elif 50000 <= gasto_diario_pp <= 100000:
+            return 'medio'
         else:
-            categoria = 'alto'
-            explicacion = f"Como el gasto diario por persona (${gasto_diario_pp:,.0f}) es mayor a $100.000."
-
-        return categoria, gasto_diario_pp, explicacion
-
+            return 'alto'
     except ZeroDivisionError:
-        return 'bajo', 0, "No se pudo calcular correctamente el presupuesto."
-
-
-
+        return 'bajo'
+# --- CARGA DINÁMICA ---
+destinos_db = obtener_lista('lista_destinos')
 sg.theme('GreenMono')
 
-layout = [
+layout_experto = [
     [sg.Text('Sistema Experto: Viajes Argentina', font=("Helvetica", 20))],
     [sg.HorizontalSeparator()],
     
@@ -49,7 +39,7 @@ layout = [
         [sg.Text('Monto Total ($):'), sg.Input(key='-MONTO-', size=(10, 1)),
          sg.Text('Días:'), sg.Input(key='-DIAS-', size=(5, 1)),
          sg.Text('Personas:'), sg.Input(key='-PERSONAS-', size=(5, 1))],
-        [sg.Button('Calcular Nivel')]
+        [sg.Button('Calcular Presupuesto')]
     ])],
 
     # Interfaz para el descubrimiento de Perfil (Extracción de Evidencia)
@@ -76,90 +66,82 @@ layout = [
     [sg.Image(key='-IMAGE-', size=(300, 200))]
 ]
 
-window = sg.Window('Argentina Travel Expert System', layout, finalize=True)
+# Pestaña 2: Módulo de Logística (TSP)
+layout_viajante = [
+    [sg.Text('Optimización de Ruta (TSP)', font=("Helvetica", 16))],
+    [sg.Frame('Seleccioná Destinos', [
+        [sg.Column([
+            [sg.Checkbox(d.replace('_', ' ').capitalize(), key=f'-CB_{d}-')] for d in destinos_db
+        ], scrollable=True, vertical_scroll_only=True, size=(430, 180))]
+    ])],
+    [sg.Button('Calcular Ruta Óptima', button_color='firebrick')],
+    [sg.Multiline(size=(60, 10), key='-OUT_TSP-', disabled=True)]
+]
+
+# Layout Final
+layout = [[sg.TabGroup([[
+    sg.Tab('Sistema Experto', layout_experto),
+    sg.Tab('Optimización de Ruta (TSP)', layout_viajante)
+]])], [sg.Button('Salir')]]
+
+window = sg.Window('Final Algorítmica - UCA', layout, finalize=True)
 
 while True:
     event, values = window.read()
-    
-    if event in (sg.WIN_CLOSED, 'Salir'):
-        break
-    
-    # Módulo de apoyo: Calculadora para determinar el nivel de presupuesto
-    if event == 'Calcular Nivel':
+    if event in (sg.WIN_CLOSED, 'Salir'): break
+
+    if event == 'Calcular Presupuesto':
         try:
             m, d, p = float(values['-MONTO-']), int(values['-DIAS-']), int(values['-PERSONAS-'])
-            cat, gasto, explicacion = calcular_categoria_presupuesto(m, d, p)
+            cat = calcular_categoria_presupuesto(m, d, p)
             window['-PRES-'].update(value=cat)
+            sg.popup(f"Presupuesto detectado: {cat.upper()}")
+        except ValueError: sg.popup_error("Ingresa números válidos.")
 
-            sg.popup(
-                f"Tu gasto diario por persona es: ${gasto:,.0f}\n\n"
-                f"{explicacion}\n\n"
-                f"Nivel detectado: {cat.upper()}"
-            )
-        except ValueError:
-            sg.popup_error("Ingresa números válidos en la calculadora.")
-
-    # Módulo de Inferencia Principal
     if event == 'Consultar Destino':
         t, p, c = values['-TEMP-'], values['-PRES-'], values['-COMP-']
-        
-        # Extracción de evidencia de la interfaz (Mapeo de respuestas si/no)
         v_aven = 'si' if values['-AVEN_SI-'] else 'no'
         v_expl = 'si' if values['-EXPL_SI-'] else 'no'
         v_desc = 'si' if values['-DESC_SI-'] else 'no'
 
         if not all([t, p, c]):
-            sg.popup_error('Por favor, selecciona temporada, presupuesto y compañía en la sección 3.')
+            sg.popup_error('Completa los campos de la sección 3.')
             continue
 
-        # PASO 1: Inferencia de Perfiles Acumulativos
-        # Gracias a que eliminamos el 'corte' (!) en Prolog, esta consulta devuelve 
-        # todos los perfiles que coincidan con los "si" del usuario.
-        perfil_query = f"determinar_perfil(Perfil, {v_aven}, {v_expl}, {v_desc})"
-        perfiles_detectados = list(prolog.query(perfil_query))
+        perfiles = list(prolog.query(f"determinar_perfil(Perfil, {v_aven}, {v_expl}, {v_desc})"))
         
-        if perfiles_detectados:
-            window['-OUTPUT-'].update("") # Limpiar pantalla para nuevos resultados
-            destinos_vistos = set() # Estructura para evitar duplicados en la visualización
-            encontrado_al_menos_uno = False
-
-            # PASO 2: El experto recorre cada perfil descubierto para dar recomendaciones
-            for p_res in perfiles_detectados:
-                per_final = p_res['Perfil']
+        if perfiles:
+            window['-OUTPUT-'].update("SISTEMA EXPERTO: RAZONAMIENTO LOGICO\n" + "="*40 + "\n") # NUEVO: Encabezado
+            vistos = set()
+            for per in perfiles:
+                # NUEVO: Llamamos a 'buscar_coincidencias_detallada' que creamos en el .pl
+                q = f"buscar_coincidencias_detallada(D, {t}, {p}, {c}, {per['Perfil']}, Act, Expl)"
                 
-                # Inferencia de Destinos por cada perfil hallado
-                query_str = f"buscar_coincidencias(D, {t}, {p}, {c}, {per_final}, A), locacion(D, Prov, Reg)"
-                resultados = list(prolog.query(query_str))
-                
-                if resultados:
-                    encontrado_al_menos_uno = True
-                    window['-OUTPUT-'].update(f"--- RECOMENDACIONES PARA PERFIL {per_final.upper()} ---\n", append=True)
-                    
-                    for res in resultados:
-                        # Solo procesamos si no mostramos este destino antes en otro perfil
-                        if res['D'] not in destinos_vistos:
-                            nombre = str(res['D']).replace('_', ' ').capitalize()
-                            prov = str(res['Prov']).replace('_', ' ').capitalize()
-                            reg = str(res['Reg']).replace('_', ' ').capitalize()
-                            act = str(res['A']).replace('_', ' ').capitalize()
-                            
-                            info = (f"DESTINO: {nombre}\n"
-                                    f"UBICACIÓN: Prov. de {prov} ({reg})\n"
-                                    f"ACTIVIDAD RECOMENDADA: {act}\n"
-                                    f"{'-'*30}\n")
-                            window['-OUTPUT-'].update(info, append=True)
-                            
-                            destinos_vistos.add(res['D'])
-                            
-                            # Actualizar imagen con el primer destino encontrado
-                            img_path = f"img/{res['D']}.png"
-                            if os.path.exists(img_path):
-                                window['-IMAGE-'].update(filename=img_path)
-
-            if not encontrado_al_menos_uno:
-                window['-OUTPUT-'].update("No encontramos destinos que coincidan con todos tus filtros.")
-                window['-IMAGE-'].update(data=None)
+                for res in list(prolog.query(q)):
+                    if res['D'] not in vistos:
+                        # NUEVO: En lugar de imprimir solo el destino, imprimimos la explicación 'Expl'
+                        explicacion = res['Expl'].decode('utf-8') if isinstance(res['Expl'], bytes) else res['Expl']
+                        window['-OUTPUT-'].update(f"• {explicacion}\n\n", append=True)
+                        vistos.add(res['D'])
         else:
-            window['-OUTPUT-'].update("No se pudo determinar un perfil de viajero.")
+            window['-OUTPUT-'].update("No se pudo determinar un perfil de usuario.")
+
+    if event == 'Calcular Ruta Óptima':
+        seleccionados = [d for d in destinos_db if values.get(f'-CB_{d}-')]
+        if len(seleccionados) < 2:
+            sg.popup_error("Elegí al menos 2 ciudades.")
+            continue
+        
+        lista_p = "[" + ",".join(seleccionados) + "]"
+        try:
+            res = list(prolog.query(f"mejor_ruta({lista_p}, Ruta, Dist)"))
+            if res:
+                sol = res[0]
+                txt = " → ".join([str(c).capitalize() for c in sol['Ruta']])
+                window['-OUT_TSP-'].update(f"RUTA: {txt}\nDISTANCIA: {sol['Dist']} km")
+            else:
+                window['-OUT_TSP-'].update("No se encontró una ruta continua.")
+        except Exception as e:
+            sg.popup_error(f"Error lógico: {e}")
 
 window.close()

@@ -82,14 +82,23 @@ determinar_perfil(exploracion, no, no, no).
 recomendar_destino(Destino, Temp, Pres, Comp, Act) :-
     buscar_coincidencias(Destino, Temp, Pres, Comp, _, Act).
 
-% buscar_coincidencias(Destino, Temp, Pres, Comp, Perfil, Act)
-buscar_coincidencias(Destino, Temp, PresUser, Comp, Perfil, Act) :-
+% Justificación de la recomendación (Explicabilidad Amigable)
+explicar(Destino, Temp, _PresUser, _Comp, Perfil, Act, Mensaje) :-
+    locacion(Destino, Prov, _Reg),
+    atomic_list_concat([
+        'Analicé tu perfil y ', Destino, ' (', Prov, ') es la opción ideal para vos porque encaja con tu estilo de ', Perfil, 
+        '. Si vas en ', Temp, ', vas a poder disfrutar de actividades como ', Act, '.'
+    ], Mensaje).
+
+% Motor de inferencia
+buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion) :-
     perfil(Destino, Perfil),
     temporada_ideal(Destino, Temp),
     presupuesto(Destino, PresDestino),
-    presupuesto_compatible(PresUser, PresDestino),
+    presupuesto_compatible(PresUser, PresDestino), % La lógica del dinero sigue funcionando internamente
     adecuada_para(Destino, Comp),
-    actividad(Destino, Act, Temp).
+    actividad(Destino, Act, Temp),
+    explicar(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion).
 % =================================================================
 % 3. PREDICADOS PARA LA INTERFAZ [cite: 46]
 % =================================================================
@@ -99,3 +108,50 @@ lista_temporadas(L) :- setof(T, Loc^temporada_ideal(Loc, T), L).
 lista_presupuestos(L) :- setof(P, Loc^presupuesto(Loc, P), L).
 lista_companias(L) :- setof(C, Loc^adecuada_para(Loc, C), L).
 
+% =================================================================
+% 4. GRAFO Y LÓGICA TSP (Problema del Viajante)
+% =================================================================
+
+% Distancias (grafo pesado dirigido, luego lo hacemos bidireccional)
+dist(bariloche, el_calafate, 1430).
+dist(bariloche, mendoza, 1215).
+dist(el_calafate, ushuaia, 880).
+dist(mendoza, salta_capital, 1260).
+dist(mendoza, buenos_aires, 1050).
+dist(buenos_aires, iguazu, 1290).
+dist(buenos_aires, mar_del_plata, 415).
+dist(iguazu, salta_capital, 1120).
+
+lista_destinos(L) :-
+    setof(X, Y^D^(dist(X,Y,D);dist(Y,X,D)), L).
+
+% 1. CONEXIÓN BÁSICA
+conectado(A, B, D) :- dist(A, B, D).
+conectado(A, B, D) :- dist(B, A, D).
+
+% 2. DISTANCIA MÍNIMA CON ESCALAS
+% Usamos aggregate_all para obtener solo el número de la distancia mas corta.
+distancia_puntos(A, B, DMin) :-
+    aggregate_all(min(D), camino_recursivo(A, B, [A], D), DMin).
+
+camino_recursivo(A, B, _, D) :- conectado(A, B, D).
+camino_recursivo(A, B, V, D) :- 
+    conectado(A, C, D1), 
+    \+ member(C, V), 
+    camino_recursivo(C, B, [C|V], D2), 
+    D is D1 + D2.
+
+% 3. SUMAR TRAMOS DE LA PERMUTACIÓN
+% Suma las distancias de los saltos entre ciudades de la lista.
+calcular_tramos([_], 0).
+calcular_tramos([C1, C2 | Resto], Total) :-
+    distancia_puntos(C1, C2, D),
+    calcular_tramos([C2 | Resto], Sub),
+    Total is D + Sub.
+
+% 4. MEJOR RUTA (SIN REGRESO AL INICIO)
+mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
+    setof([D, P], (
+        permutation(Ciudades, P),
+        calcular_tramos(P, D) % <--- Aquí ya no sumamos el regreso
+    ), [[DistanciaMinima, MejorRuta] | _]).
