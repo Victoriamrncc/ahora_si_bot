@@ -39,7 +39,7 @@ layout_experto = [
         [sg.Text('Monto Total ($):'), sg.Input(key='-MONTO-', size=(10, 1)),
          sg.Text('Días:'), sg.Input(key='-DIAS-', size=(5, 1)),
          sg.Text('Personas:'), sg.Input(key='-PERSONAS-', size=(5, 1))],
-        [sg.Button('Calcular Nivel')]
+        [sg.Button('Calcular Presupuesto')]
     ])],
 
     # Interfaz para el descubrimiento de Perfil (Extracción de Evidencia)
@@ -90,7 +90,7 @@ while True:
     event, values = window.read()
     if event in (sg.WIN_CLOSED, 'Salir'): break
 
-    if event == 'Calcular Nivel':
+    if event == 'Calcular Presupuesto':
         try:
             m, d, p = float(values['-MONTO-']), int(values['-DIAS-']), int(values['-PERSONAS-'])
             cat = calcular_categoria_presupuesto(m, d, p)

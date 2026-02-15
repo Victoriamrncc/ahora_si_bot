@@ -112,7 +112,7 @@ lista_companias(L) :- setof(C, Loc^adecuada_para(Loc, C), L).
 % 4. GRAFO Y LÓGICA TSP (Problema del Viajante)
 % =================================================================
 
-% Distancias entre ciudades (Grafo pesado)
+% Distancias (grafo pesado dirigido, luego lo hacemos bidireccional)
 dist(bariloche, el_calafate, 1430).
 dist(bariloche, mendoza, 1215).
 dist(el_calafate, ushuaia, 880).
@@ -122,21 +122,36 @@ dist(buenos_aires, iguazu, 1290).
 dist(buenos_aires, mar_del_plata, 415).
 dist(iguazu, salta_capital, 1120).
 
-% Regla para que el camino sea bidireccional
+lista_destinos(L) :-
+    setof(X, Y^D^(dist(X,Y,D);dist(Y,X,D)), L).
+
+% 1. CONEXIÓN BÁSICA
 conectado(A, B, D) :- dist(A, B, D).
 conectado(A, B, D) :- dist(B, A, D).
 
-% Predicado para obtener la lista de destinos para la interfaz
-lista_destinos(L) :- setof(D, P^R^locacion(D, P, R), L).
+% 2. DISTANCIA MÍNIMA CON ESCALAS
+% Usamos aggregate_all para obtener solo el número de la distancia mas corta.
+distancia_puntos(A, B, DMin) :-
+    aggregate_all(min(D), camino_recursivo(A, B, [A], D), DMin).
 
-% Algoritmo para calcular la distancia total de una lista
-ruta_total([_], 0).
-ruta_total([C1, C2 | Resto], Total) :-
-    conectado(C1, C2, D),
-    ruta_total([C2 | Resto], Sub),
+camino_recursivo(A, B, _, D) :- conectado(A, B, D).
+camino_recursivo(A, B, V, D) :- 
+    conectado(A, C, D1), 
+    \+ member(C, V), 
+    camino_recursivo(C, B, [C|V], D2), 
+    D is D1 + D2.
+
+% 3. SUMAR TRAMOS DE LA PERMUTACIÓN
+% Suma las distancias de los saltos entre ciudades de la lista.
+calcular_tramos([_], 0).
+calcular_tramos([C1, C2 | Resto], Total) :-
+    distancia_puntos(C1, C2, D),
+    calcular_tramos([C2 | Resto], Sub),
     Total is D + Sub.
 
-% Encuentra la mejor ruta entre un conjunto de ciudades
+% 4. MEJOR RUTA (SIN REGRESO AL INICIO)
 mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
-    findall([Ruta, Dist], (permutation(Ciudades, Ruta), ruta_total(Ruta, Dist)), Combinaciones),
-    sort(2, @=<, Combinaciones, [[MejorRuta, DistanciaMinima] | _]).
+    setof([D, P], (
+        permutation(Ciudades, P),
+        calcular_tramos(P, D) % <--- Aquí ya no sumamos el regreso
+    ), [[DistanciaMinima, MejorRuta] | _]).
