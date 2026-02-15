@@ -99,3 +99,35 @@ lista_temporadas(L) :- setof(T, Loc^temporada_ideal(Loc, T), L).
 lista_presupuestos(L) :- setof(P, Loc^presupuesto(Loc, P), L).
 lista_companias(L) :- setof(C, Loc^adecuada_para(Loc, C), L).
 
+% =================================================================
+% 4. GRAFO Y LÓGICA TSP (Problema del Viajante)
+% =================================================================
+
+% Distancias entre ciudades (Grafo pesado)
+dist(bariloche, el_calafate, 1430).
+dist(bariloche, mendoza, 1215).
+dist(el_calafate, ushuaia, 880).
+dist(mendoza, salta_capital, 1260).
+dist(mendoza, buenos_aires, 1050).
+dist(buenos_aires, iguazu, 1290).
+dist(buenos_aires, mar_del_plata, 415).
+dist(iguazu, salta_capital, 1120).
+
+% Regla para que el camino sea bidireccional
+conectado(A, B, D) :- dist(A, B, D).
+conectado(A, B, D) :- dist(B, A, D).
+
+% Predicado para obtener la lista de destinos para la interfaz
+lista_destinos(L) :- setof(D, P^R^locacion(D, P, R), L).
+
+% Algoritmo para calcular la distancia total de una lista
+ruta_total([_], 0).
+ruta_total([C1, C2 | Resto], Total) :-
+    conectado(C1, C2, D),
+    ruta_total([C2 | Resto], Sub),
+    Total is D + Sub.
+
+% Encuentra la mejor ruta entre un conjunto de ciudades
+mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
+    findall([Ruta, Dist], (permutation(Ciudades, Ruta), ruta_total(Ruta, Dist)), Combinaciones),
+    sort(2, @=<, Combinaciones, [[MejorRuta, DistanciaMinima] | _]).
