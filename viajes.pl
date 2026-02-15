@@ -73,7 +73,7 @@ presupuesto_compatible(alto, medio).
 determinar_perfil(aventura, si, _, _).
 determinar_perfil(exploracion, _, si, _).
 determinar_perfil(descanso, _, _, si).
-determinar_perfil(exploracion, no, no, no).
+determinar_perfil(exploracion, no, no, no):- !.
 
 % recomendar_destino(Destino, Temp, Pres, Comp, Act) 
 % Se define el objetivo para que Python lo consulte directamente.
@@ -85,19 +85,20 @@ recomendar_destino(Destino, Temp, PresUser, Comp, Act, Explicacion) :-
 explicar(Destino, Temp, _PresUser, _Comp, Perfil, Act, Mensaje) :-
     locacion(Destino, Prov, _Reg),
     atomic_list_concat([
-        'Analice tu perfil y ', Destino, ' (', Prov, ') es la opciogn ideal para vos porque encaja con tu estilo de ', Perfil, 
+        'Analice tu perfil y ', Destino, ' (', Prov, ') es la opcion ideal para vos porque encaja con tu estilo de ', Perfil,
         '. Si vas en ', Temp, ', vas a poder disfrutar de actividades como ', Act, '.'
     ], Mensaje).
 
 % Motor de inferencia
 buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion) :-
     perfil(Destino, Perfil),
-    (temporada_ideal(Destino, Temp) ; true), % Si no hay temporada, sigue adelante
+    temporada_ideal(Destino, Temp),
     presupuesto(Destino, PresDestino),
     presupuesto_compatible(PresUser, PresDestino),
-    (adecuada_para(Destino, Comp) ; true),    % Si no coincide la compañía, no bloquea
-    (actividad(Destino, Act, Temp) ; Act = 'explorar la ciudad'), 
+    (adecuada_para(Destino, Comp) ; true),   % Si no coincide la compañía, no bloquea
+    (actividad(Destino, Act, Temp) ; Act = 'explorar la ciudad'),
     explicar(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion).
+
 % =================================================================
 % 3. PREDICADOS PARA LA INTERFAZ [cite: 46]
 % =================================================================
@@ -154,3 +155,4 @@ mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
         permutation(Ciudades, P),
         calcular_tramos(P, D) % <--- Aquí ya no sumamos el regreso
     ), [[DistanciaMinima, MejorRuta] | _]).
+
