@@ -18,7 +18,7 @@ perfil(bariloche, exploracion).
 perfil(el_calafate, aventura).
 perfil(ushuaia, descanso).
 perfil(mar_del_plata, descanso).
-perfil(mendoza, exploracion).|
+perfil(mendoza, exploracion).
 perfil(iguazu, aventura).
 perfil(salta_capital, exploracion).
 
@@ -98,3 +98,4 @@ buscar_coincidencias(Destino, Temp, PresUser, Comp, Perfil, Act) :-
 lista_temporadas(L) :- setof(T, Loc^temporada_ideal(Loc, T), L).
 lista_presupuestos(L) :- setof(P, Loc^presupuesto(Loc, P), L).
 lista_companias(L) :- setof(C, Loc^adecuada_para(Loc, C), L).
+
