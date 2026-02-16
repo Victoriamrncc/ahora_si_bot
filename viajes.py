@@ -81,13 +81,25 @@ layout_viajante = [
     [sg.Multiline(size=(65, 5), key='-OUT_TSP-', disabled=True, font=("Consolas", 11))]
 ]
 
+layout_mt = [
+    [sg.Text('Simulador de Máquina de Turing: Validador de Tickets', font=("Helvetica", 16))],
+    [sg.Frame('Requisitos del Ticket', [
+        [sg.Text('Formato requerido: 3 Letras + 4 Números (Ej: ARG2026)')],
+        [sg.Input(key='-TICKET_IN-', size=(20, 1)), 
+         sg.Button('Validar con MT', button_color='seagreen')]
+    ])],
+    [sg.Text('Salida de la Unidad de Control:', font=("Helvetica", 11, 'bold'))],
+    [sg.Multiline(size=(65, 6), key='-OUT_MT-', font=("Consolas", 11), 
+                  text_color='lime', background_color='black', disabled=True)]
+]
+
 # Layout Final con TabGroup expandido
 layout = [
     [sg.TabGroup([[
         sg.Tab(' Sistema Experto', layout_experto),
-        sg.Tab(' Optimización de Ruta (TSP)', layout_viajante)
-    ]], expand_x=True, expand_y=True, tab_location='topleft')],
-    [sg.Sizegrip()] # Para que puedas redimensionar la ventana
+        sg.Tab(' Optimización (TSP)', layout_viajante),
+        sg.Tab(' Validación (MT)', layout_mt) # Nueva pestaña
+    ]], expand_x=True, expand_y=True)]
 ]
 
 window = sg.Window('Final Algorítmica - UCA', layout, resizable=True, finalize=True)
@@ -154,5 +166,23 @@ while True:
                 window['-OUT_TSP-'].update("No se encontró una ruta continua.")
         except Exception as e:
             sg.popup_error(f"Error lógico: {e}")
+
+    if event == 'Validar con MT':
+        ticket = values['-TICKET_IN-'].strip()
+        if len(ticket) != 7:
+            sg.popup_error("El ticket debe tener exactamente 7 caracteres.")
+            continue
+            
+        try:
+            res = list(prolog.query(f"validar_ticket('{ticket}', Res)"))
+            if res:
+                resultado = res[0]['Res']
+                # Decodificar si es necesario
+                msg = resultado.decode('utf-8') if isinstance(resultado, bytes) else resultado
+                window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + f"\nLOG: Analizando secuencia de entrada...\nRESULTADO: {msg}")
+            else:
+                window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + "\nLOG: La MT se detuvo en un estado de rechazo.\nRESULTADO: Ticket INVALIDO")
+        except Exception as e:
+            sg.popup_error(f"Error en el motor logico: {e}")
 
 window.close()

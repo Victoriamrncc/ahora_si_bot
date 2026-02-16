@@ -73,7 +73,7 @@ presupuesto_compatible(alto, medio).
 determinar_perfil(aventura, si, _, _).
 determinar_perfil(exploracion, _, si, _).
 determinar_perfil(descanso, _, _, si).
-determinar_perfil(exploracion, no, no, no):- !.
+determinar_perfil(exploracion, no, no, no).
 
 % recomendar_destino(Destino, Temp, Pres, Comp, Act) 
 % Se define el objetivo para que Python lo consulte directamente.
@@ -156,3 +156,37 @@ mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
         calcular_tramos(P, D) % <--- Aquí ya no sumamos el regreso
     ), [[DistanciaMinima, MejorRuta] | _]).
 
+%=================================================================
+% --- MÁQUINA DE TURING: VALIDADOR DE FORMATO (LLLNNNN) ---
+%=================================================================
+% --- MÁQUINA DE TURING: VALIDADOR DE FORMATO (LLLNNNN) ---
+
+% Predicados auxiliares (Ponelos arriba de todo) [cite: 1098]
+es_letra(X) :- member(X, [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]).
+es_numero(N) :- member(N, ['0','1','2','3','4','5','6','7','8','9']).
+
+% Bloque de transiciones delta/5 (Todos juntos ahora) [cite: 861]
+delta(q0, L, q1, L, r) :- es_letra(L).
+delta(q1, L, q2, L, r) :- es_letra(L).
+delta(q2, L, q3, L, r) :- es_letra(L).
+delta(q3, N, q4, N, r) :- es_numero(N).
+delta(q4, N, q5, N, r) :- es_numero(N).
+delta(q5, N, q6, N, r) :- es_numero(N).
+delta(q6, N, q7, N, r) :- es_numero(N).
+delta(q7, b, q_accept, b, r). % Verificación de final de cadena (Blanco) [cite: 865, 866]
+
+% Resto del motor de la MT y validación... [cite: 857, 1085]
+validar_ticket(String, "Ticket VALIDO - Formato Correcto") :-
+    string_lower(String, Lower),
+    atom_chars(Lower, Lista),
+    append(Lista, [b], Cinta), % El simbolo 'b' representa el Blanco 'B' de la teoría [cite: 843, 872]
+    ejecutar_mt(q0, Cinta, 0), !.
+
+validar_ticket(_, "Ticket INVALIDO - Error de Sintaxis").
+
+ejecutar_mt(q_accept, _, _) :- !. % Aceptación por parada [cite: 1091, 1093]
+ejecutar_mt(Estado, Cinta, Pos) :-
+    nth0(Pos, Cinta, Simbolo),
+    delta(Estado, Simbolo, NuevoEstado, _, r),
+    NuevaPos is Pos + 1,
+    ejecutar_mt(NuevoEstado, Cinta, NuevaPos).
