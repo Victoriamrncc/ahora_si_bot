@@ -25,10 +25,14 @@ def calcular_categoria_presupuesto(monto, dias, personas):
         else:
             return 'alto'
     except ZeroDivisionError:
-        return 'bajo'
+        return 'bajo'   
+
 # --- CARGA DINÁMICA ---
 destinos_db = obtener_lista('lista_destinos')
 sg.theme('GreenMono')
+
+# --- ESTILOS REUTILIZABLES ---
+label_sz = (15, 1)
 
 layout_experto = [
     [sg.Text('Sistema Experto: Viajes Argentina', font=("Helvetica", 20))],
@@ -63,28 +67,42 @@ layout_experto = [
     [sg.HorizontalSeparator()],
     [sg.Text('Inferencia del Sistema Experto:', font=("Helvetica", 12, 'bold'))],
     [sg.Multiline(size=(60, 10), key='-OUTPUT-', font=("Consolas", 10))],
-    [sg.Image(key='-IMAGE-', size=(300, 200))]
 ]
 
-# Pestaña 2: Módulo de Logística (TSP)
+# Pestaña 2: TSP con mejor scroll
 layout_viajante = [
-    [sg.Text('Optimización de Ruta (TSP)', font=("Helvetica", 16))],
-    [sg.Frame('Seleccioná Destinos', [
-        [sg.Column([
-            [sg.Checkbox(d.replace('_', ' ').capitalize(), key=f'-CB_{d}-')] for d in destinos_db
-        ], scrollable=True, vertical_scroll_only=True, size=(430, 180))]
-    ])],
-    [sg.Button('Calcular Ruta Óptima', button_color='firebrick')],
-    [sg.Multiline(size=(60, 10), key='-OUT_TSP-', disabled=True)]
+    [sg.Text('Optimización de Ruta (TSP)', font=("Helvetica", 18, "bold"), pad=(0, 10))],
+    [sg.Frame('Seleccioná tus destinos de interés', [
+        [sg.Column([[sg.Checkbox(d.replace('_', ' ').capitalize(), key=f'-CB_{d}-', pad=(5, 5))] for d in destinos_db], 
+                   scrollable=True, vertical_scroll_only=True, size=(500, 250), background_color='#e8e8e8')]
+    ], p=10)],
+    [sg.Button('Calcular Ruta Óptima', size=(20, 1), button_color='firebrick')],
+    [sg.Text('Resultado:', font=("Helvetica", 11, 'bold'))],
+    [sg.Multiline(size=(65, 5), key='-OUT_TSP-', disabled=True, font=("Consolas", 11))]
 ]
 
-# Layout Final
-layout = [[sg.TabGroup([[
-    sg.Tab('Sistema Experto', layout_experto),
-    sg.Tab('Optimización de Ruta (TSP)', layout_viajante)
-]])], [sg.Button('Salir')]]
+layout_mt = [
+    [sg.Text('Simulador de Máquina de Turing: Validador de Tickets', font=("Helvetica", 16))],
+    [sg.Frame('Requisitos del Ticket', [
+        [sg.Text('Formato requerido: 3 Letras + 4 Números (Ej: ARG2026)')],
+        [sg.Input(key='-TICKET_IN-', size=(20, 1)), 
+         sg.Button('Validar con MT', button_color='seagreen')]
+    ])],
+    [sg.Text('Salida de la Unidad de Control:', font=("Helvetica", 11, 'bold'))],
+    [sg.Multiline(size=(65, 6), key='-OUT_MT-', font=("Consolas", 11), 
+                  text_color='lime', background_color='black', disabled=True)]
+]
 
-window = sg.Window('Final Algorítmica - UCA', layout, finalize=True)
+# Layout Final con TabGroup expandido
+layout = [
+    [sg.TabGroup([[
+        sg.Tab(' Sistema Experto', layout_experto),
+        sg.Tab(' Optimización (TSP)', layout_viajante),
+        sg.Tab(' Validación (MT)', layout_mt) # Nueva pestaña
+    ]], expand_x=True, expand_y=True)]
+]
+
+window = sg.Window('Final Algorítmica - UCA', layout, resizable=True, finalize=True)
 
 while True:
     event, values = window.read()
@@ -123,6 +141,11 @@ while True:
                         explicacion = res['Expl'].decode('utf-8') if isinstance(res['Expl'], bytes) else res['Expl']
                         window['-OUTPUT-'].update(f"• {explicacion}\n\n", append=True)
                         vistos.add(res['D'])
+
+            if not vistos:
+                mensaje_vacio = "Lo sentimos, nuestra base de datos no encontró una recomendación para estas características."
+                window['-OUTPUT-'].update(f"\n{mensaje_vacio}", append=True)
+            # -----------------------------
         else:
             window['-OUTPUT-'].update("No se pudo determinar un perfil de usuario.")
 
@@ -143,5 +166,23 @@ while True:
                 window['-OUT_TSP-'].update("No se encontró una ruta continua.")
         except Exception as e:
             sg.popup_error(f"Error lógico: {e}")
+
+    if event == 'Validar con MT':
+        ticket = values['-TICKET_IN-'].strip()
+        if len(ticket) != 7:
+            sg.popup_error("El ticket debe tener exactamente 7 caracteres.")
+            continue
+            
+        try:
+            res = list(prolog.query(f"validar_ticket('{ticket}', Res)"))
+            if res:
+                resultado = res[0]['Res']
+                # Decodificar si es necesario
+                msg = resultado.decode('utf-8') if isinstance(resultado, bytes) else resultado
+                window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + f"\nLOG: Analizando secuencia de entrada...\nRESULTADO: {msg}")
+            else:
+                window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + "\nLOG: La MT se detuvo en un estado de rechazo.\nRESULTADO: Ticket INVALIDO")
+        except Exception as e:
+            sg.popup_error(f"Error en el motor logico: {e}")
 
 window.close()
