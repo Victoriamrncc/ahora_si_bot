@@ -31,12 +31,13 @@ temporada_ideal(mar_del_plata, verano).
 temporada_ideal(iguazu, invierno).
 
 % presupuesto(Locacion, Nivel)
-presupuesto(bariloche, alto).
+presupuesto(bariloche, medio).
 presupuesto(el_calafate, alto).
 presupuesto(ushuaia, alto).
 presupuesto(mar_del_plata, bajo).
 presupuesto(mendoza, medio).
 presupuesto(salta_capital, bajo).
+presupuesto(iguazu, bajo).
 
 % adecuada_para(Locacion, Compania)
 adecuada_para(bariloche, familia).
@@ -46,15 +47,16 @@ adecuada_para(ushuaia, pareja).
 adecuada_para(mar_del_plata, amigos).
 adecuada_para(mendoza, pareja).
 adecuada_para(salta_capital, familia).
+adecuada_para(iguazu, familia).
 
 % actividad(Locacion, Actividad, Temporada) [cite: 51]
-actividad(bariloche, esqui, invierno).
-actividad(bariloche, trekking, verano).
-actividad(el_calafate, glaciar, verano).
-actividad(ushuaia, navegar_canal_beagle, invierno).
-actividad(mendoza, cata_vinos, otono).
-actividad(mar_del_plata, playa, verano).
-actividad(iguazu, cataratas, invierno).
+actividad(bariloche, 'esqui', invierno).
+actividad(bariloche, 'trekking', verano).
+actividad(el_calafate, 'ver el glaciar', verano).
+actividad(ushuaia, 'navegar canal beagle', invierno).
+actividad(mendoza, 'cata de vinos', otono).
+actividad(mar_del_plata, 'playa', verano).
+actividad(iguazu, 'Las Cataratas del Iguazú', _).
 
 % presupuesto_compatible(NivelUsuario, NivelDestino)
 presupuesto_compatible(bajo, bajo).
