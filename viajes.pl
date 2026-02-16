@@ -2,36 +2,47 @@
 % 1. BASE DE CONOCIMIENTOS (Hechos)
 % =================================================================
 
-% locacion(Nombre, Provincia, Region) [cite: 51]
-locacion(bariloche, rio_negro, patagonia).
-locacion(el_calafate, santa_cruz, patagonia).
-locacion(ushuaia, tierra_del_fuego, patagonia).
-locacion(mar_del_plata, buenos_aires, costa).
-locacion(mendoza, mendoza, cuyo).
-locacion(iguazu, misiones, litorial).
-locacion(salta_capital, salta, norte).
+% locacion(Nombre, Provincia) [cite: 51]
+locacion(bariloche, rio_negro).
+locacion(buenos_aires, buenos_aires).
+locacion(el_calafate, santa_cruz).
+locacion(ushuaia, tierra_del_fuego).
+locacion(mar_del_plata, buenos_aires).
+locacion(mendoza, mendoza).
+locacion(iguazu, misiones).
+locacion(salta_capital, salta).
 
 % perfil(Destino, Estilo) [cite: 1402]
 % Define la naturaleza del destino para el sistema experto
 perfil(bariloche, aventura).
 perfil(bariloche, exploracion).
+perfil(buenos_aires, exploracion).
 perfil(el_calafate, aventura).
 perfil(ushuaia, descanso).
-perfil(mar_del_plata, descanso).
-perfil(mendoza, exploracion).
-perfil(iguazu, aventura).
+perfil(ushuaia, exploracion).
+perfil(mar_del_plata, _).
+perfil(mendoza, descanso).
+perfil(mendoza, aventura).
+perfil(iguazu, descanso).
+perfil(iguazu, exploracion).
 perfil(salta_capital, exploracion).
 
 % temporada_ideal(Locacion, Temporada)
 temporada_ideal(bariloche, invierno).
 temporada_ideal(bariloche, verano).
+temporada_ideal(mendoza, invierno).
+temporada_ideal(mendoza, verano).
+temporada_ideal(buenos_aires, invierno).
+temporada_ideal(buenos_aires, verano).
 temporada_ideal(el_calafate, verano).
 temporada_ideal(ushuaia, invierno).
 temporada_ideal(mar_del_plata, verano).
 temporada_ideal(iguazu, invierno).
+temporada_ideal(salta_capital, invierno).
 
 % presupuesto(Locacion, Nivel)
-presupuesto(bariloche, medio).
+presupuesto(bariloche, alto).
+presupuesto(buenos_aires, medio).
 presupuesto(el_calafate, alto).
 presupuesto(ushuaia, alto).
 presupuesto(mar_del_plata, bajo).
@@ -42,7 +53,7 @@ presupuesto(iguazu, bajo).
 % adecuada_para(Locacion, Compania)
 adecuada_para(bariloche, familia).
 adecuada_para(el_calafate, pareja).
-adecuada_para(el_calafate, amigos).
+adecuada_para(buenos_aires, amigos).
 adecuada_para(ushuaia, pareja).
 adecuada_para(mar_del_plata, amigos).
 adecuada_para(mendoza, pareja).
@@ -54,9 +65,9 @@ actividad(bariloche, 'esqui', invierno).
 actividad(bariloche, 'trekking', verano).
 actividad(el_calafate, 'ver el glaciar', verano).
 actividad(ushuaia, 'navegar canal beagle', invierno).
-actividad(mendoza, 'cata de vinos', otono).
+actividad(mendoza, 'cata de vinos', verano).
 actividad(mar_del_plata, 'playa', verano).
-actividad(iguazu, 'Las Cataratas del Iguazú', _).
+actividad(iguazu, 'Las Cataratas del Iguazu', _).
 
 % presupuesto_compatible(NivelUsuario, NivelDestino)
 presupuesto_compatible(bajo, bajo).
@@ -64,6 +75,16 @@ presupuesto_compatible(medio, medio).
 presupuesto_compatible(medio, bajo).
 presupuesto_compatible(alto, alto).
 presupuesto_compatible(alto, medio).
+
+% Distancias (grafo pesado dirigido, luego lo hacemos bidireccional)
+dist(bariloche, el_calafate, 1430).
+dist(bariloche, mendoza, 1215).
+dist(el_calafate, ushuaia, 880).
+dist(mendoza, salta_capital, 1260).
+dist(mendoza, buenos_aires, 1050).
+dist(buenos_aires, iguazu, 1290).
+dist(buenos_aires, mar_del_plata, 415).
+dist(iguazu, salta_capital, 1120).
 
 
 % =================================================================
@@ -85,7 +106,7 @@ recomendar_destino(Destino, Temp, PresUser, Comp, Act, Explicacion) :-
 
 % Justificación de la recomendación (Explicabilidad Amigable)
 explicar(Destino, Temp, _PresUser, _Comp, Perfil, Act, Mensaje) :-
-    locacion(Destino, Prov, _Reg),
+    locacion(Destino, Prov),
     atomic_list_concat([
         'Analice tu perfil y ', Destino, ' (', Prov, ') es la opcion ideal para vos porque encaja con tu estilo de ', Perfil,
         '. Si vas en ', Temp, ', vas a poder disfrutar de actividades como ', Act, '.'
@@ -109,23 +130,12 @@ buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, Perfil, Act, Expli
 lista_temporadas(L) :- setof(T, Loc^temporada_ideal(Loc, T), L).
 lista_presupuestos(L) :- setof(P, Loc^presupuesto(Loc, P), L).
 lista_companias(L) :- setof(C, Loc^adecuada_para(Loc, C), L).
+lista_destinos(L) :-
+    setof(X, Y^D^(dist(X,Y,D);dist(Y,X,D)), L).
 
 % =================================================================
 % 4. GRAFO Y LÓGICA TSP (Problema del Viajante)
 % =================================================================
-
-% Distancias (grafo pesado dirigido, luego lo hacemos bidireccional)
-dist(bariloche, el_calafate, 1430).
-dist(bariloche, mendoza, 1215).
-dist(el_calafate, ushuaia, 880).
-dist(mendoza, salta_capital, 1260).
-dist(mendoza, buenos_aires, 1050).
-dist(buenos_aires, iguazu, 1290).
-dist(buenos_aires, mar_del_plata, 415).
-dist(iguazu, salta_capital, 1120).
-
-lista_destinos(L) :-
-    setof(X, Y^D^(dist(X,Y,D);dist(Y,X,D)), L).
 
 % 1. CONEXIÓN BÁSICA
 conectado(A, B, D) :- dist(A, B, D).
@@ -161,7 +171,6 @@ mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
 %=================================================================
 % --- MÁQUINA DE TURING: VALIDADOR DE FORMATO (LLLNNNN) ---
 %=================================================================
-% --- MÁQUINA DE TURING: VALIDADOR DE FORMATO (LLLNNNN) ---
 
 % Predicados auxiliares (Ponelos arriba de todo) [cite: 1098]
 es_letra(X) :- member(X, [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]).
@@ -192,3 +201,20 @@ ejecutar_mt(Estado, Cinta, Pos) :-
     delta(Estado, Simbolo, NuevoEstado, _, r),
     NuevaPos is Pos + 1,
     ejecutar_mt(NuevoEstado, Cinta, NuevaPos).
+
+% =================================================================
+% 6. AUTOMATA FINITO (Ciclo de Vida del Asistente)
+% =================================================================
+% transicion(EstadoActual, Evento, SiguienteEstado)
+
+transicion(inicio, abrir_app, esperando_perfil).
+transicion(esperando_perfil, ingresar_datos, calculando_destino).
+transicion(calculando_destino, mostrar_resultado, destino_mostrado).
+transicion(destino_mostrado, pedir_ruta, calculando_tsp).
+transicion(calculando_tsp, mostrar_ruta, ruta_lista).
+transicion(ruta_lista, validar_ticket, validando_mt).
+transicion(validando_mt, ticket_ok, finalizado).
+transicion(finalizado, reiniciar, inicio).
+
+% Predicado de consulta para la lógica del autómata
+proximo_paso(Actual, Evento, Siguiente) :- transicion(Actual, Evento, Siguiente).
