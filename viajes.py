@@ -1,6 +1,5 @@
 import PySimpleGUI as sg
 from pyswip import Prolog
-import os
 
 # Inicializar Prolog
 prolog = Prolog()

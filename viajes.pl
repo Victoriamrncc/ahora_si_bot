@@ -1,8 +1,8 @@
 % =================================================================
-% 1. BASE DE CONOCIMIENTOS (Hechos)
+%  BASE DE CONOCIMIENTOS 
 % =================================================================
 
-% locacion(Nombre, Provincia) [cite: 51]
+% locacion(Nombre, Provincia)
 locacion(bariloche, rio_negro).
 locacion(buenos_aires, buenos_aires).
 locacion(el_calafate, santa_cruz).
@@ -12,7 +12,7 @@ locacion(mendoza, mendoza).
 locacion(iguazu, misiones).
 locacion(salta_capital, salta).
 
-% perfil(Destino, Estilo) [cite: 1402]
+% perfil(Destino, Estilo) 
 % Define la naturaleza del destino para el sistema experto
 perfil(bariloche, aventura).
 perfil(bariloche, exploracion).
@@ -76,7 +76,7 @@ presupuesto_compatible(medio, bajo).
 presupuesto_compatible(alto, alto).
 presupuesto_compatible(alto, medio).
 
-% Distancias (grafo pesado dirigido, luego lo hacemos bidireccional)
+% Distancias (grafo pesado dirigido)
 dist(bariloche, el_calafate, 1430).
 dist(bariloche, mendoza, 1215).
 dist(el_calafate, ushuaia, 880).
@@ -123,7 +123,7 @@ buscar_coincidencias_detallada(Destino, Temp, PresUser, Comp, Perfil, Act, Expli
     explicar(Destino, Temp, PresUser, Comp, Perfil, Act, Explicacion).
 
 % =================================================================
-% 3. PREDICADOS PARA LA INTERFAZ [cite: 46]
+% PREDICADOS PARA LA INTERFAZ 
 % =================================================================
 
 % Genera listas dinámicas para los menús desplegables de Python
@@ -134,7 +134,7 @@ lista_destinos(L) :-
     setof(X, Y^D^(dist(X,Y,D);dist(Y,X,D)), L).
 
 % =================================================================
-% 4. GRAFO Y LÓGICA TSP (Problema del Viajante)
+% PRONLEMAS NP (Problema del Viajante)
 % =================================================================
 
 % 1. CONEXIÓN BÁSICA
@@ -169,14 +169,14 @@ mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
     ), [[DistanciaMinima, MejorRuta] | _]).
 
 %=================================================================
-% --- MÁQUINA DE TURING: VALIDADOR DE FORMATO (LLLNNNN) ---
+% MÁQUINA DE TURING
 %=================================================================
 
-% Predicados auxiliares (Ponelos arriba de todo) [cite: 1098]
+% Predicados auxiliares para validar el formato del ticket (3 letras + 4 números) 
 es_letra(X) :- member(X, [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]).
 es_numero(N) :- member(N, ['0','1','2','3','4','5','6','7','8','9']).
 
-% Bloque de transiciones delta/5 (Todos juntos ahora) [cite: 861]
+% Bloque de transiciones delta/5 (Todos juntos ahora) 
 delta(q0, L, q1, L, r) :- es_letra(L).
 delta(q1, L, q2, L, r) :- es_letra(L).
 delta(q2, L, q3, L, r) :- es_letra(L).
@@ -184,18 +184,18 @@ delta(q3, N, q4, N, r) :- es_numero(N).
 delta(q4, N, q5, N, r) :- es_numero(N).
 delta(q5, N, q6, N, r) :- es_numero(N).
 delta(q6, N, q7, N, r) :- es_numero(N).
-delta(q7, b, q_accept, b, r). % Verificación de final de cadena (Blanco) [cite: 865, 866]
+delta(q7, b, q_accept, b, r). % Verificación de final de cadena (Blanco) 
 
-% Resto del motor de la MT y validación... [cite: 857, 1085]
+% Resto del motor de la MT y validación... 
 validar_ticket(String, "Ticket VALIDO - Formato Correcto") :-
     string_lower(String, Lower),
     atom_chars(Lower, Lista),
-    append(Lista, [b], Cinta), % El simbolo 'b' representa el Blanco 'B' de la teoría [cite: 843, 872]
+    append(Lista, [b], Cinta), 
     ejecutar_mt(q0, Cinta, 0), !.
 
 validar_ticket(_, "Ticket INVALIDO - Error de Sintaxis").
 
-ejecutar_mt(q_accept, _, _) :- !. % Aceptación por parada [cite: 1091, 1093]
+ejecutar_mt(q_accept, _, _) :- !. 
 ejecutar_mt(Estado, Cinta, Pos) :-
     nth0(Pos, Cinta, Simbolo),
     delta(Estado, Simbolo, NuevoEstado, _, r),
@@ -203,7 +203,7 @@ ejecutar_mt(Estado, Cinta, Pos) :-
     ejecutar_mt(NuevoEstado, Cinta, NuevaPos).
 
 % =================================================================
-% 6. AUTOMATA FINITO (Ciclo de Vida del Asistente)
+%  AUTOMATA FINITO 
 % =================================================================
 % transicion(EstadoActual, Evento, SiguienteEstado)
 
