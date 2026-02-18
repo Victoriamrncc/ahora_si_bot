@@ -70,7 +70,7 @@ layout_experto = [
 
 # Pestaña 2: TSP con mejor scroll
 layout_viajante = [
-    [sg.Text('Optimización de Ruta (TSP)', font=("Helvetica", 18, "bold"), pad=(0, 10))],
+    [sg.Text('Optimización de Ruta', font=("Helvetica", 18, "bold"), pad=(0, 10))],
     [sg.Frame('Seleccioná tus destinos de interés', [
         [sg.Column([[sg.Checkbox(d.replace('_', ' ').capitalize(), key=f'-CB_{d}-', pad=(5, 5))] for d in destinos_db], 
                    scrollable=True, vertical_scroll_only=True, size=(500, 250), background_color='#e8e8e8')]
@@ -81,7 +81,7 @@ layout_viajante = [
 ]
 
 layout_mt = [
-    [sg.Text('Simulador de Máquina de Turing: Validador de Tickets', font=("Helvetica", 16))],
+    [sg.Text('Validador de Tickets', font=("Helvetica", 16))],
     [sg.Frame('Requisitos del Ticket', [
         [sg.Text('Formato requerido: 3 Letras + 4 Números (Ej: ARG2026)')],
         [sg.Input(key='-TICKET_IN-', size=(20, 1)), 
@@ -92,13 +92,13 @@ layout_mt = [
                   text_color='lime', background_color='black', disabled=True)]
 ]
 
-# Layout Final con TabGroup expandido
+
 layout = [
     [sg.TabGroup([[
         sg.Tab(' Sistema Experto', layout_experto),
-        sg.Tab(' Optimización (TSP)', layout_viajante),
-        sg.Tab(' Validación (MT)', layout_mt) # Nueva pestaña
-    ]], expand_x=True, expand_y=True)]
+        sg.Tab(' Optimización de Ruta', layout_viajante),
+        sg.Tab(' Validación de Tickets', layout_mt)
+    ]])]
 ]
 
 window = sg.Window('Final Algorítmica - UCA', layout, resizable=True, finalize=True)

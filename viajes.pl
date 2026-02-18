@@ -78,13 +78,15 @@ presupuesto_compatible(alto, medio).
 
 % Distancias (grafo pesado dirigido)
 dist(bariloche, el_calafate, 1430).
-dist(bariloche, mendoza, 1215).
 dist(el_calafate, ushuaia, 880).
-dist(mendoza, salta_capital, 1260).
-dist(mendoza, buenos_aires, 1050).
-dist(buenos_aires, iguazu, 1290).
+dist(ushuaia, buenos_aires, 3100).
 dist(buenos_aires, mar_del_plata, 415).
+dist(buenos_aires, iguazu, 1290).
+dist(mar_del_plata, iguazu, 1850).
 dist(iguazu, salta_capital, 1120).
+dist(salta_capital, mendoza, 1260).
+dist(mendoza, bariloche, 1215).
+dist(mendoza, buenos_aires, 1050).
 
 
 % =================================================================
