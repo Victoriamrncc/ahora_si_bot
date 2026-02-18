@@ -26,8 +26,21 @@ def calcular_categoria_presupuesto(monto, dias, personas):
     except ZeroDivisionError:
         return 'bajo'   
 
+
+def mover_automata_x(evento):
+    global estado_actual_x
+    try:
+        # Usamos transicion_x para no pisar el otro
+        res = list(prolog.query(f"transicion_x({estado_actual_x}, {evento}, Siguiente)"))
+        if res:
+            estado_actual_x = res[0]['Siguiente']
+            return True
+    except: pass
+    return False
+
 # --- CARGA DINÁMICA ---
 destinos_db = obtener_lista('lista_destinos')
+estado_actual_x = "bloqueado" # Estado inicial del automata
 sg.theme('GreenMono')
 
 # --- ESTILOS REUTILIZABLES ---
@@ -70,7 +83,7 @@ layout_experto = [
 
 # Pestaña 2: TSP con mejor scroll
 layout_viajante = [
-    [sg.Text('Optimización de Ruta', font=("Helvetica", 18, "bold"), pad=(0, 10))],
+    [sg.Text('Optimización de Ruta (TSP)', font=("Helvetica", 18, "bold"), pad=(0, 10))],
     [sg.Frame('Seleccioná tus destinos de interés', [
         [sg.Column([[sg.Checkbox(d.replace('_', ' ').capitalize(), key=f'-CB_{d}-', pad=(5, 5))] for d in destinos_db], 
                    scrollable=True, vertical_scroll_only=True, size=(500, 250), background_color='#e8e8e8')]
@@ -81,7 +94,7 @@ layout_viajante = [
 ]
 
 layout_mt = [
-    [sg.Text('Validador de Tickets', font=("Helvetica", 16))],
+    [sg.Text('Simulador de Máquina de Turing: Validador de Tickets', font=("Helvetica", 16))],
     [sg.Frame('Requisitos del Ticket', [
         [sg.Text('Formato requerido: 3 Letras + 4 Números (Ej: ARG2026)')],
         [sg.Input(key='-TICKET_IN-', size=(20, 1)), 
@@ -92,13 +105,23 @@ layout_mt = [
                   text_color='lime', background_color='black', disabled=True)]
 ]
 
+layout_automata_x = [
+    [sg.Text('Autómata de Seguridad (X)', font=("Helvetica", 15, "bold"))],
+    [sg.Frame('Estado del Sistema X', [
+        [sg.Text('ESTADO ACTUAL:'), sg.Text(estado_actual_x.upper(), key='-LABEL_X-', text_color='orange')],
+        [sg.Button('Ingresar PIN'), sg.Button('Cerrar Sesión')]
+    ])],
+    [sg.Multiline(size=(40, 5), key='-LOG_X-', disabled=True)]
+]
 
+# Layout Final con TabGroup expandido
 layout = [
     [sg.TabGroup([[
         sg.Tab(' Sistema Experto', layout_experto),
         sg.Tab(' Optimización de Ruta', layout_viajante),
-        sg.Tab(' Validación de Tickets', layout_mt)
-    ]])]
+        sg.Tab(' Validación de Tickets', layout_mt),
+        sg.Tab(' Autómata de Seguridad', layout_automata_x)
+    ]], expand_x=True, expand_y=True)]
 ]
 
 window = sg.Window('Final Algorítmica - UCA', layout, resizable=True, finalize=True)
@@ -183,5 +206,18 @@ while True:
                 window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + "\nLOG: La MT se detuvo en un estado de rechazo.\nRESULTADO: Ticket INVALIDO")
         except Exception as e:
             sg.popup_error(f"Error en el motor logico: {e}")
+
+    if event == 'Ingresar PIN':
+        # Supongamos que verificas algo y da OK
+        if mover_automata_x('ingresar_pin'):
+            mover_automata_x('pin_correcto') # Saltamos a acceso_concedido
+            window['-LOG_X-'].update("Acceso permitido al sistema X\n", append=True)
+        
+    if event == 'Cerrar Sesión':
+        mover_automata_x('cerrar_sesion')
+        window['-LOG_X-'].update("Sesión cerrada.\n", append=True)
+
+    # Actualización visual de este autómata específico
+    window['-LABEL_X-'].update(estado_actual_x.upper())
 
 window.close()

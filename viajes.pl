@@ -207,16 +207,10 @@ ejecutar_mt(Estado, Cinta, Pos) :-
 % =================================================================
 %  AUTOMATA FINITO 
 % =================================================================
-% transicion(EstadoActual, Evento, SiguienteEstado)
+% --- NUEVO AUTÓMATA (Control de Acceso/Login) ---
+estado_x(bloqueado). % Inicial
 
-transicion(inicio, abrir_app, esperando_perfil).
-transicion(esperando_perfil, ingresar_datos, calculando_destino).
-transicion(calculando_destino, mostrar_resultado, destino_mostrado).
-transicion(destino_mostrado, pedir_ruta, calculando_tsp).
-transicion(calculando_tsp, mostrar_ruta, ruta_lista).
-transicion(ruta_lista, validar_ticket, validando_mt).
-transicion(validando_mt, ticket_ok, finalizado).
-transicion(finalizado, reiniciar, inicio).
-
-% Predicado de consulta para la lógica del autómata
-proximo_paso(Actual, Evento, Siguiente) :- transicion(Actual, Evento, Siguiente).
+transicion_x(bloqueado, ingresar_pin, verificando).
+transicion_x(verificando, pin_correcto, acceso_concedido).
+transicion_x(verificando, pin_incorrecto, bloqueado).
+transicion_x(acceso_concedido, cerrar_sesion, bloqueado).
