@@ -174,11 +174,12 @@ mejor_ruta(Ciudades, MejorRuta, DistanciaMinima) :-
 % MÁQUINA DE TURING
 %=================================================================
 
-% Predicados auxiliares para validar el formato del ticket (3 letras + 4 números) 
+% --- Predicados auxiliares ---
 es_letra(X) :- member(X, [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]).
 es_numero(N) :- member(N, ['0','1','2','3','4','5','6','7','8','9']).
 
-% Bloque de transiciones delta/5 (Todos juntos ahora) 
+% --- Transiciones Delta ---
+% La MT espera un formato específico: 3 letras seguidas de 4 números, terminando con 'b'.
 delta(q0, L, q1, L, r) :- es_letra(L).
 delta(q1, L, q2, L, r) :- es_letra(L).
 delta(q2, L, q3, L, r) :- es_letra(L).
@@ -186,23 +187,28 @@ delta(q3, N, q4, N, r) :- es_numero(N).
 delta(q4, N, q5, N, r) :- es_numero(N).
 delta(q5, N, q6, N, r) :- es_numero(N).
 delta(q6, N, q7, N, r) :- es_numero(N).
-delta(q7, b, q_accept, b, r). % Verificación de final de cadena (Blanco) 
+delta(q7, b, q_accept, 'B', r).
 
-% Resto del motor de la MT y validación... 
-validar_ticket(String, "Ticket VALIDO - Formato Correcto") :-
+% --- Motor de la MT 
+validar_ticket(String, Mensaje, CintaFinal) :-
     string_lower(String, Lower),
     atom_chars(Lower, Lista),
-    append(Lista, [b], Cinta), 
-    ejecutar_mt(q0, Cinta, 0), !.
+    append(Lista, [b], CintaInicial), 
+    (ejecutar_mt(q0, CintaInicial, 0, CintaFinal) -> 
+        Mensaje = "Ticket VALIDO - Formato Correcto"
+    ;   Mensaje = "Ticket INVALIDO - Error de Sintaxis", CintaFinal = []).
 
-validar_ticket(_, "Ticket INVALIDO - Error de Sintaxis").
-
-ejecutar_mt(q_accept, _, _) :- !. 
-ejecutar_mt(Estado, Cinta, Pos) :-
-    nth0(Pos, Cinta, Simbolo),
-    delta(Estado, Simbolo, NuevoEstado, _, r),
+ejecutar_mt(q_accept, Cinta, _, Cinta) :- !. 
+ejecutar_mt(Estado, Cinta, Pos, CintaFinal) :-
+    nth0(Pos, Cinta, SimboloLeido),
+    delta(Estado, SimboloLeido, NuevoEstado, SimboloEscrito, r),
+    sustituir(Cinta, Pos, SimboloEscrito, NuevaCinta),
     NuevaPos is Pos + 1,
-    ejecutar_mt(NuevoEstado, Cinta, NuevaPos).
+    ejecutar_mt(NuevoEstado, NuevaCinta, NuevaPos, CintaFinal).
+
+sustituir(L, I, E, K) :-
+    nth0(I, L, _, R),
+    nth0(I, K, E, R).
 
 % =================================================================
 %  AUTOMATA FINITO 

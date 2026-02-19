@@ -196,16 +196,31 @@ while True:
             continue
             
         try:
-            res = list(prolog.query(f"validar_ticket('{ticket}', Res)"))
+            # Consultamos con 3 argumentos: Entrada, Mensaje y Cinta
+            res = list(prolog.query(f"validar_ticket('{ticket}', Msg, Cinta)"))
+            
             if res:
-                resultado = res[0]['Res']
-                # Decodificar si es necesario
-                msg = resultado.decode('utf-8') if isinstance(resultado, bytes) else resultado
-                window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + f"\nLOG: Analizando secuencia de entrada...\nRESULTADO: {msg}")
+                # Extraemos los datos de la respuesta de Prolog
+                mensaje_logico = res[0]['Msg']
+                cinta_procesada = res[0]['Cinta']
+                
+                # Decodificar si vienen como bytes
+                if isinstance(mensaje_logico, bytes):
+                    mensaje_logico = mensaje_logico.decode('utf-8')
+                
+                # Formatear la cinta para mostrarla en el Multiline
+                cinta_str = ", ".join([str(item) for item in cinta_procesada])
+                
+                info_final = (f"RESULTADO: {mensaje_logico}\n"
+                             f"ESTADO DE CINTA: [{cinta_str}]\n"
+                             f"LOG: La MT ha procesado y almacenado la secuencia.")
+                
+                window['-OUT_MT-'].update(info_final)
             else:
-                window['-OUT_MT-'].update(f"CINTA: [ {ticket} | B ]\n" + "-"*30 + "\nLOG: La MT se detuvo en un estado de rechazo.\nRESULTADO: Ticket INVALIDO")
+                window['-OUT_MT-'].update("LOG: La MT se detuvo. Cadena rechazada.")
+                
         except Exception as e:
-            sg.popup_error(f"Error en el motor logico: {e}")
+            sg.popup_error(f"Error en el motor lógico: {e}")
 
     if event == 'Ingresar PIN':
         # Supongamos que verificas algo y da OK
